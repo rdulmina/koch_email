@@ -1,27 +1,4 @@
 import ballerina/log;
-import ballerina/time;
-import ballerinax/kafka;
-
-// Function to publish shipment event to Kafka
-public function publishShipmentEvent(ShipmentPayload payload) returns error? {
-    ShipmentMessage kafkaMessage = {
-        customerId: payload.customerId,
-        shipmentId: payload.shipmentId,
-        shipmentDate: payload.shipmentDate,
-        products: payload.products,
-        status: "received",
-        timestamp: time:utcToString(time:utcNow())
-    };
-
-    kafka:AnydataProducerRecord producerRecord = {
-        topic: kafkaTopic,
-        key: payload.shipmentId,
-        value: kafkaMessage
-    };
-
-    check kafkaProducer->send(producerRecord);
-    log:printInfo("Published shipment event to Kafka", shipmentId = payload.shipmentId);
-}
 
 // Function to generate email content for shipment
 public function generateShipmentEmail(ShipmentMessage message) returns string {

@@ -3,15 +3,12 @@ configurable string kafkaBootstrapServers = "kafka-f5b6556dc0cd4b87be99200bba820
 configurable string kafkaTopic = "shipments-received-v1";
 
 // Kafka SSL configuration - Add paths to your certificate files
-configurable string kafkaCaCertPath = "resources/ca-9c495bac-c192-47e2-b5ac-ef94276f99ca.pem";
-configurable string kafkaClientCertPath = "resources/service.cert";
-configurable string kafkaClientKeyPath = "resources/service.key";
+configurable string kafkaCaCertPath = ?;
+configurable string kafkaClientCertPath = ?;
+configurable string kafkaClientKeyPath = ?;
 
 // Email configuration
 configurable string smtpHost = "smtp.gmail.com";
-configurable string smtpUsername = "cleanharborspoc@gmail.com";
-configurable string smtpPassword = "arsw lebh yfre xpeq";
+configurable string smtpUsername = ?;
+configurable string smtpPassword = ?;
 configurable int smtpPort = 587;
-
-// HTTP configuration
-configurable int httpPort = 8080;
