@@ -13,7 +13,6 @@ public function publishShipmentEvent(ShipmentPayload payload) returns error? {
         timestamp: time:utcToString(time:utcNow())
     };
 
-check sendShipmentNotification(kafkaMessage);
     kafka:AnydataProducerRecord producerRecord = {
         topic: kafkaTopic,
         key: payload.shipmentId,

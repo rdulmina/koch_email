@@ -1,7 +1,6 @@
 import ballerina/http;
 import ballerina/log;
 import ballerinax/kafka;
-import ballerina/io;
 
 // HTTP service for receiving shipment data
 service / on new http:Listener(httpPort) {
@@ -25,7 +24,6 @@ service / on new http:Listener(httpPort) {
                 }
             };
         }
-        io:print("Valid shipment data received");
         // Publish event to Kafka
         error? publishResult = publishShipmentEvent(payload);
         if publishResult is error {
@@ -43,18 +41,29 @@ service / on new http:Listener(httpPort) {
             "status": "received"
         };
     }
+
 }
 
 // Kafka service to consume shipment messages and send emails
 service on new kafka:Listener(
     bootstrapServers = kafkaBootstrapServers,
     groupId = "shipment-email-service",
-    topics = [kafkaTopic]
+    topics = [kafkaTopic],
+    securityProtocol = "SSL",
+    secureSocket = {
+        cert: kafkaCaCertPath,
+        key: {
+            certFile: kafkaClientCertPath,
+            keyFile: kafkaClientKeyPath
+        },
+        protocol: {
+            name: "TLS"
+        }
+    }
 ) {
 
     remote function onConsumerRecord(ShipmentMessage[] records) returns error? {
         foreach var recordValue in records {
-            // anydata recordValue = consumerRecord.value;
             ShipmentMessage message = check recordValue.cloneWithType(ShipmentMessage);
 
             log:printInfo("Processing shipment message", shipmentId = message.shipmentId);
