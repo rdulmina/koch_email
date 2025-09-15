@@ -29,7 +29,7 @@ public function generateShipmentEmail(ShipmentMessage message) returns string {
 }
 
 // Function to send shipment notification email
-public function sendShipmentNotification(ShipmentMessage message) returns error? {
+public function sendShipmentNotification(ShipmentMessage message, string correlationId) returns error? {
     string emailBody = generateShipmentEmail(message);
     string subject = string `Shipment Received - ${message.shipmentId}`;
     string toAddress = string `dulmina@wso2.com`;
@@ -43,6 +43,7 @@ public function sendShipmentNotification(ShipmentMessage message) returns error?
 
     log:printInfo("Sent shipment notification email",
             shipmentId = message.shipmentId,
-            customerId = message.customerId
+            customerId = message.customerId,
+            correlationId = correlationId
     );
 }

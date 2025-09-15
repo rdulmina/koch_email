@@ -18,19 +18,52 @@ service on new kafka:Listener(
         }
     }
 ) {
+    remote function onConsumerRecord(kafka:AnydataConsumerRecord[] records) returns error? {
+        foreach kafka:AnydataConsumerRecord consumerRecord in records {
+            // Extract correlation-id from headers
+            map<byte[]|byte[][]|string|string[]> headers = consumerRecord.headers;
+            string correlationId = "";
 
-    remote function onConsumerRecord(ShipmentMessage[] records) returns error? {
-        foreach var recordValue in records {
-            ShipmentMessage message = check recordValue.cloneWithType(ShipmentMessage);
+            if headers.hasKey("correlation-id") {
+                var headerValue = headers["correlation-id"];
+                if headerValue is string {
+                    correlationId = headerValue;
+                } else if headerValue is byte[] {
+                    string|error stringValue = string:fromBytes(headerValue);
+                    if stringValue is string {
+                        correlationId = stringValue;
+                    }
+                }
+            }
 
-            log:printInfo("Processing shipment message", shipmentId = message.shipmentId);
+            // Handle the message value conversion
+            ShipmentMessage shipmentMessage;
+            anydata messageValue = consumerRecord.value;
+            
+            if messageValue is byte[] {
+                // Convert byte array to string first
+                string jsonString = check string:fromBytes(messageValue);
+                
+                // Parse JSON string and convert to ShipmentMessage
+                json messageJson = check jsonString.fromJsonString();
+                shipmentMessage = check messageJson.cloneWithType();
+            } else {
+                // If it's already structured data, convert directly
+                shipmentMessage = check messageValue.cloneWithType();
+            }
+            
+            log:printInfo("Processing shipment message", 
+                    shipmentId = shipmentMessage.shipmentId,
+                    correlationId = correlationId
+            );
 
             // Send email notification
-            error? emailResult = sendShipmentNotification(message);
+            error? emailResult = sendShipmentNotification(shipmentMessage, correlationId);
             if emailResult is error {
                 log:printError("Failed to send email notification",
                         'error = emailResult,
-                        shipmentId = message.shipmentId
+                        shipmentId = shipmentMessage.shipmentId,
+                        correlationId = correlationId
                 );
                 return emailResult;
             }
