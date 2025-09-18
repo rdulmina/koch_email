@@ -29,7 +29,7 @@ public function generateShipmentEmail(ShipmentMessage message) returns string {
 }
 
 // Function to send shipment notification email
-public function sendShipmentNotification(ShipmentMessage message, string correlationId) returns error? {
+public function sendShipmentNotification(ShipmentMessage message, string? correlationId) returns error? {
     string emailBody = generateShipmentEmail(message);
     string subject = string `Shipment Received - ${message.shipmentId}`;
     string toAddress = string `dulmina@wso2.com`;
@@ -46,4 +46,31 @@ public function sendShipmentNotification(ShipmentMessage message, string correla
             customerId = message.customerId,
             correlationId = correlationId
     );
+}
+
+function getCorelationId(map<byte[]|byte[][]|string|string[]> headers) returns string?|error {
+    if !headers.hasKey("correlation-id") {
+        return;
+    }
+
+    var headerValue = headers["correlation-id"];
+    if headerValue is string {
+        return headerValue;
+    }
+
+    if headerValue is byte[] {
+        return string:fromBytes(headerValue);
+    }
+}
+
+function getShipmentRecord(anydata messageValue) returns ShipmentMessage|error {
+    if messageValue is byte[] {
+        // Convert byte array to string first
+        string jsonString = check string:fromBytes(messageValue);
+        // Parse JSON string and convert to ShipmentMessage
+        return jsonString.fromJsonStringWithType(ShipmentMessage);
+    } else {
+        // If it's already structured data, convert directly
+        return messageValue.cloneWithType(ShipmentMessage);
+    }
 }

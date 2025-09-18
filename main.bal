@@ -18,41 +18,15 @@ service on new kafka:Listener(
         }
     }
 ) {
-    remote function onConsumerRecord(kafka:AnydataConsumerRecord[] records) returns error? {
-        foreach kafka:AnydataConsumerRecord consumerRecord in records {
+    remote function onConsumerRecord(kafka:AnydataConsumerRecord[] messages) returns error? {
+        foreach kafka:AnydataConsumerRecord currentMessage in messages {
             // Extract correlation-id from headers
-            map<byte[]|byte[][]|string|string[]> headers = consumerRecord.headers;
-            string correlationId = "";
-
-            if headers.hasKey("correlation-id") {
-                var headerValue = headers["correlation-id"];
-                if headerValue is string {
-                    correlationId = headerValue;
-                } else if headerValue is byte[] {
-                    string|error stringValue = string:fromBytes(headerValue);
-                    if stringValue is string {
-                        correlationId = stringValue;
-                    }
-                }
-            }
+            string? correlationId = check getCorelationId(currentMessage.headers);
 
             // Handle the message value conversion
-            ShipmentMessage shipmentMessage;
-            anydata messageValue = consumerRecord.value;
-            
-            if messageValue is byte[] {
-                // Convert byte array to string first
-                string jsonString = check string:fromBytes(messageValue);
-                
-                // Parse JSON string and convert to ShipmentMessage
-                json messageJson = check jsonString.fromJsonString();
-                shipmentMessage = check messageJson.cloneWithType();
-            } else {
-                // If it's already structured data, convert directly
-                shipmentMessage = check messageValue.cloneWithType();
-            }
-            
-            log:printInfo("Processing shipment message", 
+            ShipmentMessage shipmentMessage = check getShipmentRecord(currentMessage.value);
+
+            log:printInfo("Processing shipment message",
                     shipmentId = shipmentMessage.shipmentId,
                     correlationId = correlationId
             );
