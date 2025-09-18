@@ -2,7 +2,7 @@ import ballerina/log;
 import ballerinax/kafka;
 
 // Kafka service to consume shipment messages and send emails
-service on new kafka:Listener(
+listener kafka:Listener kafkaLis = new kafka:Listener(
     bootstrapServers = kafkaBootstrapServers,
     groupId = "shipment-email-service",
     topics = [kafkaTopic],
@@ -17,7 +17,8 @@ service on new kafka:Listener(
             name: "TLS"
         }
     }
-) {
+);
+service on kafkaLis{
     remote function onConsumerRecord(kafka:AnydataConsumerRecord[] messages) returns error? {
         foreach kafka:AnydataConsumerRecord currentMessage in messages {
             // Extract correlation-id from headers
